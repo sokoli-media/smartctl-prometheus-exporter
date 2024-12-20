@@ -4,8 +4,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
+	"log/slog"
+	"os"
 	"testing"
 )
+
+var sLogForTesting = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 func getLabelsForTest(device SmartCtlDevice) prometheus.Labels {
 	return prometheus.Labels{
@@ -38,7 +42,7 @@ func Test_LoadUserCapacity(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	testLabels := getLabelsForTest(device)
@@ -71,7 +75,7 @@ func Test_LoadInterfaceSpeed(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	testLabels := getLabelsForTest(device)
@@ -93,7 +97,7 @@ func Test_LoadSmartStatus_Passed(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	testLabels := getLabelsForTest(device)
@@ -114,7 +118,7 @@ func Test_LoadSmartStatus_Failed(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	testLabels := getLabelsForTest(device)
@@ -146,7 +150,7 @@ func Test_LoadAtaAttributes(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	errorRateLabels := getLabelsForTest(device)
@@ -172,7 +176,7 @@ func Test_LoadPowerOnTime(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	testLabels := getLabelsForTest(device)
@@ -191,7 +195,7 @@ func Test_LoadPowerCycleTime(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	testLabels := getLabelsForTest(device)
@@ -212,7 +216,7 @@ func Test_LoadTemperature(t *testing.T) {
 		Type: "sat",
 	}
 
-	err := loadMetricsFromDeviceScan(device, []byte(output))
+	err := loadMetricsFromDeviceScan(sLogForTesting, device, []byte(output))
 	require.NoError(t, err)
 
 	testLabels := getLabelsForTest(device)

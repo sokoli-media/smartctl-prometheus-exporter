@@ -53,13 +53,13 @@ func scan() (*SmartCtlScan, error) {
 	return &smartCtlScan, nil
 }
 
-func fetchDeviceMetrics(device SmartCtlDevice) error {
+func fetchDeviceMetrics(logger *slog.Logger, device SmartCtlDevice) error {
 	out, err := exec.Command("smartctl", device.Name, "-d", device.Type, "-a", "--json").Output()
 	if err != nil {
 		return err
 	}
 
-	return loadMetricsFromDeviceScan(device, out)
+	return loadMetricsFromDeviceScan(logger, device, out)
 }
 
 func getLabels(device SmartCtlDevice, deviceScan SmartCtlDeviceScan) prometheus.Labels {
@@ -70,11 +70,14 @@ func getLabels(device SmartCtlDevice, deviceScan SmartCtlDeviceScan) prometheus.
 	}
 }
 
-func loadMetricsFromDeviceScan(device SmartCtlDevice, commandOutput []byte) error {
+func loadMetricsFromDeviceScan(logger *slog.Logger, device SmartCtlDevice, commandOutput []byte) error {
 	var smartCtlDeviceScan SmartCtlDeviceScan
 	if err := json.Unmarshal(commandOutput, &smartCtlDeviceScan); err != nil {
 		return err
 	}
+
+	dumpedScan, _ := json.Marshal(smartCtlDeviceScan)
+	logger.Info("loaded smartctl device scan", "commandOutput", string(commandOutput), "loadedScan", dumpedScan)
 
 	deviceMetricLabels := getLabels(device, smartCtlDeviceScan)
 
@@ -120,7 +123,7 @@ func fetchSmartCtlMetrics(logger *slog.Logger) {
 
 	for _, device := range scanResult.Devices {
 		logger.Info("scanning device", "device", device.Name, "type", device.Type)
-		err = fetchDeviceMetrics(device)
+		err = fetchDeviceMetrics(logger, device)
 		if err != nil {
 			logger.Error("fetching metrics for device failed", "error", err, "device", device.Name)
 		}
