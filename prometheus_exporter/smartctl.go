@@ -6,8 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log/slog"
 	"os/exec"
-	"regexp"
-	"strings"
 	"time"
 )
 
@@ -22,13 +20,13 @@ var interfaceSpeedMax = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "smartct
 var smartStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_smart_status"}, metricsLabelsNames)
 
 var smartAttributeLabels = append(metricsLabelsNames, "attribute")
-var ataSmartAttribute = prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_ata_smart_attribute_value"}, smartAttributeLabels)
+var ataSmartAttribute = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_ata_smart_attribute_value"}, smartAttributeLabels)
 
-var powerOnTimeHours = prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_power_on_time_hours"}, metricsLabelsNames)
+var powerOnTimeHours = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_power_on_time_hours"}, metricsLabelsNames)
 
-var powerCycleTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_power_cycle_time"}, metricsLabelsNames)
+var powerCycleTime = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_power_cycle_time"}, metricsLabelsNames)
 
-var temperature = prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_temperature"}, metricsLabelsNames)
+var temperature = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_temperature"}, metricsLabelsNames)
 
 var lastUpdate = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "smartctl_last_update"}, metricsLabelsNames)
 
@@ -55,13 +53,13 @@ func scan() (*SmartCtlScan, error) {
 	return &smartCtlScan, nil
 }
 
-func fetchDeviceMetrics(logger *slog.Logger, device SmartCtlDevice) error {
+func fetchDeviceMetrics(device SmartCtlDevice) error {
 	out, err := exec.Command("smartctl", device.Name, "-d", device.Type, "-a", "--json").Output()
 	if err != nil {
 		return err
 	}
 
-	return loadMetricsFromDeviceScan(logger, device, out)
+	return loadMetricsFromDeviceScan(device, out)
 }
 
 func getLabels(device SmartCtlDevice, deviceScan SmartCtlDeviceScan) prometheus.Labels {
@@ -72,29 +70,11 @@ func getLabels(device SmartCtlDevice, deviceScan SmartCtlDeviceScan) prometheus.
 	}
 }
 
-func normalizeString(input string) string {
-	input = strings.ReplaceAll(input, "\n", " ")
-
-	re := regexp.MustCompile(`\s+`)
-	input = re.ReplaceAllString(input, " ")
-
-	return strings.TrimSpace(input)
-}
-
-func loadMetricsFromDeviceScan(logger *slog.Logger, device SmartCtlDevice, commandOutput []byte) error {
+func loadMetricsFromDeviceScan(device SmartCtlDevice, commandOutput []byte) error {
 	var smartCtlDeviceScan SmartCtlDeviceScan
 	if err := json.Unmarshal(commandOutput, &smartCtlDeviceScan); err != nil {
 		return err
 	}
-
-	dumpedScan, _ := json.Marshal(smartCtlDeviceScan)
-	logger.Info(
-		"loaded smartctl device scan",
-		"commandOutput",
-		normalizeString(string(commandOutput)),
-		"loadedScan",
-		string(dumpedScan),
-	)
 
 	deviceMetricLabels := getLabels(device, smartCtlDeviceScan)
 
@@ -140,8 +120,10 @@ func fetchSmartCtlMetrics(logger *slog.Logger) {
 
 	for _, device := range scanResult.Devices {
 		logger.Info("scanning device", "device", device.Name, "type", device.Type)
-		err = fetchDeviceMetrics(logger, device)
-		if err != nil {
+		err = fetchDeviceMetrics(device)
+		if err == nil {
+			logger.Info("updated device metrics successfully", "device", device.Name)
+		} else {
 			logger.Error("fetching metrics for device failed", "error", err, "device", device.Name)
 		}
 	}
