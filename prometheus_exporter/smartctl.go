@@ -130,8 +130,8 @@ func fetchSmartCtlMetrics(logger *slog.Logger) {
 func CollectSmartCtlStats(logger *slog.Logger) {
 	ticker := time.NewTicker(5 * time.Minute)
 	for {
-		<-ticker.C
-
 		go fetchSmartCtlMetrics(logger)
+
+		<-ticker.C
 	}
 }
