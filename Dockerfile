@@ -13,7 +13,7 @@ CMD ["/prometheus-exporter"]
 
 FROM alpine:latest
 
-RUN  apk add smartmontools
+RUN apk add smartmontools
 
 COPY --from=build /prometheus-exporter /prometheus-exporter
 COPY /dashboards /dashboards
