@@ -6,6 +6,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log/slog"
 	"os/exec"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -70,6 +72,15 @@ func getLabels(device SmartCtlDevice, deviceScan SmartCtlDeviceScan) prometheus.
 	}
 }
 
+func normalizeString(input string) string {
+	input = strings.ReplaceAll(input, "\n", " ")
+
+	re := regexp.MustCompile(`\s+`)
+	input = re.ReplaceAllString(input, " ")
+
+	return strings.TrimSpace(input)
+}
+
 func loadMetricsFromDeviceScan(logger *slog.Logger, device SmartCtlDevice, commandOutput []byte) error {
 	var smartCtlDeviceScan SmartCtlDeviceScan
 	if err := json.Unmarshal(commandOutput, &smartCtlDeviceScan); err != nil {
@@ -77,7 +88,13 @@ func loadMetricsFromDeviceScan(logger *slog.Logger, device SmartCtlDevice, comma
 	}
 
 	dumpedScan, _ := json.Marshal(smartCtlDeviceScan)
-	logger.Info("loaded smartctl device scan", "commandOutput", string(commandOutput), "loadedScan", dumpedScan)
+	logger.Info(
+		"loaded smartctl device scan",
+		"commandOutput",
+		normalizeString(string(commandOutput)),
+		"loadedScan",
+		string(dumpedScan),
+	)
 
 	deviceMetricLabels := getLabels(device, smartCtlDeviceScan)
 
