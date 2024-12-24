@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 24,
+  "id": 46,
   "links": [],
   "panels": [
     {
@@ -96,7 +96,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_smart_status",
+          "expr": "max(smartctl_smart_status) by (serial_number)",
           "instant": false,
           "legendFormat": "{{serial_number}}",
           "range": true,
@@ -175,10 +175,10 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_user_capacity_bytes{serial_number=\"${serial_number}\"}",
+          "expr": "sum(smartctl_user_capacity_bytes{serial_number=\"${serial_number}\"}) by (serial_number)",
           "hide": false,
           "instant": false,
-          "legendFormat": "capacity bytes",
+          "legendFormat": "__auto",
           "range": true,
           "refId": "B"
         }
@@ -242,7 +242,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_interface_speed_current{serial_number=\"${serial_number}\"}",
+          "expr": "max(smartctl_interface_speed_current{serial_number=\"${serial_number}\"}) by (serial_number)",
           "hide": false,
           "instant": false,
           "legendFormat": "capacity bytes",
@@ -309,7 +309,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_interface_speed_max{serial_number=\"${serial_number}\"}",
+          "expr": "max(smartctl_interface_speed_max{serial_number=\"${serial_number}\"}) by (serial_number)",
           "hide": false,
           "instant": false,
           "legendFormat": "capacity bytes",
@@ -376,7 +376,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_power_on_time_hours{serial_number=\"${serial_number}\"}",
+          "expr": "max(smartctl_power_on_time_hours{serial_number=\"${serial_number}\"}) by (serial_number)",
           "hide": false,
           "instant": false,
           "legendFormat": "capacity bytes",
@@ -443,7 +443,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_power_cycle_time{serial_number=\"${serial_number}\"}",
+          "expr": "max(smartctl_power_cycle_time{serial_number=\"${serial_number}\"}) by (serial_number)",
           "hide": false,
           "instant": false,
           "legendFormat": "capacity bytes",
@@ -510,7 +510,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_temperature{serial_number=\"${serial_number}\"}",
+          "expr": "max(smartctl_temperature{serial_number=\"${serial_number}\"}) by (serial_number)",
           "hide": false,
           "instant": false,
           "legendFormat": "capacity bytes",
@@ -624,7 +624,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "smartctl_ata_smart_attribute_value{serial_number=\"${serial_number}\", attribute=\"${attribute_name}\"}",
+          "expr": "sum(smartctl_ata_smart_attribute_value{serial_number=\"${serial_number}\", attribute=\"${attribute_name}\"})",
           "instant": false,
           "legendFormat": "{{attribute}}",
           "range": true,
