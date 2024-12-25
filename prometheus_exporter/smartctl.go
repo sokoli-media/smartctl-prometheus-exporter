@@ -93,10 +93,19 @@ func loadMetricsFromDeviceScan(device SmartCtlDevice, commandOutput []byte) erro
 	smartStatus.With(deviceMetricLabels).Set(float64(smartStatusValue))
 
 	for _, attribute := range smartCtlDeviceScan.ATASMARTAttributes.Table {
+		if attribute.Name == "Unknown_Attribute" {
+			continue
+		}
+
 		attributeLabels := getLabels(device, smartCtlDeviceScan)
 		attributeLabels["attribute"] = attribute.Name
 
-		ataSmartAttribute.With(attributeLabels).Set(float64(attribute.Value))
+		value := attribute.Raw.Value
+		if attribute.Name == "Temperature_Celsius" {
+			value = attribute.Raw.Value & 0xFF
+		}
+
+		ataSmartAttribute.With(attributeLabels).Set(float64(value))
 	}
 
 	powerOnTimeHours.With(deviceMetricLabels).Set(float64(smartCtlDeviceScan.PowerOnTime.Hours))

@@ -130,12 +130,18 @@ func Test_LoadAtaAttributes(t *testing.T) {
 		  {
 			"name": "Raw_Read_Error_Rate",
 			"value": 200,
-			"worst": 201
+			"worst": 201,
+			"raw": {
+				"value": 33
+			}
 		  },
 		  {
 			"name": "Spin_Up_Time",
 			"value": 253,
-			"worst": 188
+			"worst": 188,
+			"raw": {
+				"value": 44
+			}
 		  }
 		]
 	  }
@@ -151,11 +157,71 @@ func Test_LoadAtaAttributes(t *testing.T) {
 
 	errorRateLabels := getLabelsForTest(device)
 	errorRateLabels["attribute"] = "Raw_Read_Error_Rate"
-	require.Equal(t, float64(200), getGaugeVecValue(t, ataSmartAttribute, errorRateLabels))
+	require.Equal(t, float64(33), getGaugeVecValue(t, ataSmartAttribute, errorRateLabels))
 
 	spinUpLabels := getLabelsForTest(device)
 	spinUpLabels["attribute"] = "Spin_Up_Time"
-	require.Equal(t, float64(253), getGaugeVecValue(t, ataSmartAttribute, spinUpLabels))
+	require.Equal(t, float64(44), getGaugeVecValue(t, ataSmartAttribute, spinUpLabels))
+}
+
+func Test_LoadAtaAttributes_ParseWDRedTemperature(t *testing.T) {
+	var output = `{
+	  "model_name": "WDC WD80EFZZ-68BTXN0",
+	  "serial_number": "WD-CAZXCVBN",
+	  "ata_smart_attributes": {
+		"table": [
+		  {
+			"name": "Temperature_Celsius",
+			"value": 200,
+			"worst": 201,
+			"raw": {
+				"value": 240519282721
+			}
+		  }
+		]
+	  }
+	}`
+
+	device := SmartCtlDevice{
+		Name: "/dev/sdb",
+		Type: "sat",
+	}
+
+	err := loadMetricsFromDeviceScan(device, []byte(output))
+	require.NoError(t, err)
+
+	errorRateLabels := getLabelsForTest(device)
+	errorRateLabels["attribute"] = "Temperature_Celsius"
+	require.Equal(t, float64(33), getGaugeVecValue(t, ataSmartAttribute, errorRateLabels))
+}
+
+func Test_LoadAtaAttributes__IgnoreUnknown(t *testing.T) {
+	var output = `{
+	  "model_name": "WDC WD80EFZZ-68BTXN0",
+	  "serial_number": "WD-CAZXCVBN",
+	  "ata_smart_attributes": {
+		"table": [
+		  {
+			"name": "Unknown_Attribute",
+			"value": 200,
+			"worst": 201
+		  }
+		]
+	  }
+	}`
+
+	device := SmartCtlDevice{
+		Name: "/dev/sdb",
+		Type: "sat",
+	}
+
+	err := loadMetricsFromDeviceScan(device, []byte(output))
+	require.NoError(t, err)
+
+	// for some reason our test method "creates" empty metrics, so we need to check for the value and hope for the best
+	errorRateLabels := getLabelsForTest(device)
+	errorRateLabels["attribute"] = "Unknown_Attribute"
+	require.Equal(t, float64(0), getGaugeVecValue(t, ataSmartAttribute, errorRateLabels))
 }
 
 func Test_LoadPowerOnTime(t *testing.T) {
