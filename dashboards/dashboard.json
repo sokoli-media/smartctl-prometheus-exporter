@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 46,
+  "id": 50,
   "links": [],
   "panels": [
     {
@@ -116,6 +116,7 @@
       },
       "id": 3,
       "panels": [],
+      "repeat": "serial_number",
       "title": "Device details ($serial_number)",
       "type": "row"
     },
@@ -144,7 +145,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 8,
         "x": 0,
         "y": 8
@@ -178,7 +179,7 @@
           "expr": "sum(smartctl_user_capacity_bytes{serial_number=\"${serial_number}\"}) by (serial_number)",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{serial_number}}",
           "range": true,
           "refId": "B"
         }
@@ -211,7 +212,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 8,
         "x": 8,
         "y": 8
@@ -278,7 +279,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 8,
         "x": 16,
         "y": 8
@@ -348,7 +349,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 13
+        "y": 12
       },
       "id": 6,
       "options": {
@@ -415,7 +416,7 @@
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 13
+        "y": 12
       },
       "id": 7,
       "options": {
@@ -482,7 +483,7 @@
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 13
+        "y": 12
       },
       "id": 8,
       "options": {
@@ -527,7 +528,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 66
       },
       "id": 9,
       "panels": [],
@@ -598,7 +599,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 67
       },
       "id": 10,
       "maxPerRow": 2,
@@ -624,9 +625,10 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(smartctl_ata_smart_attribute_value{serial_number=\"${serial_number}\", attribute=\"${attribute_name}\"})",
+          "exemplar": true,
+          "expr": "sum(smartctl_ata_smart_attribute_value{serial_number=~\"${serial_number}\", attribute=\"${attribute_name}\"}) by (serial_number, attribute)",
           "instant": false,
-          "legendFormat": "{{attribute}}",
+          "legendFormat": "{{serial_number}}",
           "range": true,
           "refId": "A"
         }
@@ -641,16 +643,23 @@
   "templating": {
     "list": [
       {
+        "allValue": ".*",
         "current": {
-          "text": "WD-XXXXX",
-          "value": "WD-XXXXX"
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
         },
         "definition": "label_values(smartctl_last_update,serial_number)",
+        "includeAll": true,
         "label": "Serial number",
+        "multi": true,
         "name": "serial_number",
         "options": [],
         "query": {
