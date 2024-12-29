@@ -16,6 +16,6 @@ FROM alpine:latest
 RUN apk add smartmontools
 
 COPY --from=build /prometheus-exporter /prometheus-exporter
-COPY /dashboards /dashboards
+COPY /monitoring /dashboards
 
 ENTRYPOINT ["/prometheus-exporter"]

@@ -1,0 +1,5 @@
+groups:
+  - name: ./smartctl-prometheus-exporter.checks
+    rules:
+      - alert: smartctl metrics not updated in 10 minutes
+        expr: time() - smartctl_last_update > 10*60

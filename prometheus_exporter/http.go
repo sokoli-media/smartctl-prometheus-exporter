@@ -11,7 +11,10 @@ func RunHTTPServer(logger *slog.Logger) {
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/dashboard.json", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "/dashboards/dashboard.json")
+		http.ServeFile(w, r, "/monitoring/dashboard.json")
+	})
+	http.HandleFunc("/prometheusRule.yml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "/monitoring/prometheusRule.yml")
 	})
 
 	err := http.ListenAndServe(":9000", nil)
