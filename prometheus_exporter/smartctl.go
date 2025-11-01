@@ -1,11 +1,14 @@
 package prometheus_exporter
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log/slog"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -39,7 +42,7 @@ type SmartCtlScan struct {
 	Devices []SmartCtlDevice `json:"devices"`
 }
 
-func scan() (*SmartCtlScan, error) {
+func scan() ([]SmartCtlDevice, error) {
 	out, err := exec.Command("smartctl", "--scan-open", "--json").Output()
 	if err != nil {
 		return nil, err
@@ -50,7 +53,44 @@ func scan() (*SmartCtlScan, error) {
 		return nil, err
 	}
 
-	return &smartCtlScan, nil
+	return smartCtlScan.Devices, nil
+}
+
+func scanUSBDevices() ([]SmartCtlDevice, error) {
+	out, err := exec.Command("lsblk", "-d", "-o", "NAME,TRAN").Output()
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	var devices []SmartCtlDevice
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+
+		name := fields[0]
+		tran := fields[1]
+
+		if tran == "usb" {
+			devices = append(
+				devices,
+				SmartCtlDevice{
+					Name: name,
+					Type: "scsi",
+				},
+			)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return devices, nil
 }
 
 func fetchDeviceMetrics(device SmartCtlDevice) error {
@@ -119,15 +159,40 @@ func loadMetricsFromDeviceScan(device SmartCtlDevice, commandOutput []byte) erro
 	return nil
 }
 
+func containsDevice(devices []SmartCtlDevice, device string) bool {
+	for _, existingDevice := range devices {
+		if existingDevice.Name == device {
+			return true
+		}
+	}
+
+	return false
+}
+
 func fetchSmartCtlMetrics(logger *slog.Logger) {
 	logger.Info("looking for devices")
-	scanResult, err := scan()
+	devices, err := scan()
 	if err != nil {
 		logger.Error("scanning for devices failed", "error", err)
 		return
 	}
 
-	for _, device := range scanResult.Devices {
+	USBDevices, USBErr := scanUSBDevices()
+	if USBErr != nil {
+		logger.Error("scanning for USB devices failed", "error", USBErr)
+		return
+	}
+
+	for _, USBDevice := range USBDevices {
+		if !containsDevice(devices, USBDevice.Name) {
+			devices = append(
+				devices,
+				USBDevice,
+			)
+		}
+	}
+
+	for _, device := range devices {
 		logger.Info("scanning device", "device", device.Name, "type", device.Type)
 		err = fetchDeviceMetrics(device)
 		if err == nil {
