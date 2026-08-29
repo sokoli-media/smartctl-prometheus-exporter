@@ -1,23 +1,30 @@
-name: Build and Push Docker Image to Docker Hub
+name: Build and Push Docker Image to GHCR
 
 on:
   push:
     branches:
       - main
 
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
 jobs:
   push_to_registry:
-    name: push docker image to hub
+    name: push docker image to ghcr
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: check repository
         uses: actions/checkout@v4
 
-      - name: login to docker registry
+      - name: login to github container registry
         uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKERHUB_USERNAME}}
-          password: ${{secrets.DOCKERHUB_TOKEN}}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: build and push docker image to registry
         uses: docker/build-push-action@v5
@@ -25,4 +32,9 @@ jobs:
           platforms: linux/amd64
           context: .
           push: true
-          tags: sokolimedia/smartctl-prometheus-exporter:latest
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
