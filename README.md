@@ -2,7 +2,7 @@
 
 Simple project to export smartctl metrics to Prometheus.
 
-Docker image: `sokolimedia/smartctl-prometheus-exporter:latest`
+Docker image: `ghcr.io/slakje-nl/smartctl-prometheus-exporter:latest`
 
 Container has to be run with `privileged` option enabled.
 
