@@ -138,8 +138,11 @@ func fetchSmartCtlMetrics(logger *slog.Logger) {
 	}
 }
 
+// Every 15 seconds: a SMART read on a SATA SSD is a couple of ATA commands answered by the
+// drive's controller, no I/O and nothing to spin up, and the fan controller reads drive
+// temperatures from these series rather than running smartctl itself.
 func CollectSmartCtlStats(logger *slog.Logger) {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(15 * time.Second)
 	for {
 		go fetchSmartCtlMetrics(logger)
 
